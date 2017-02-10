@@ -1,0 +1,97 @@
+/**
+ * @Description: 百度音乐
+ * @Author: goodstudy
+ * @Author URL: http://blog.wdyun.cn
+ */
+#song,#songnav{
+	list-style:none;
+	padding:0;
+	margin:0	
+}
+#songnav{
+	overflow:hidden;
+	clear:both;
+}
+#songnav:after{
+	clear:both;
+}
+#song li{
+	margin:5px 0;
+	height:21px;
+	padding:5px;
+	padding-left:25px;
+	background:url("<?php echo BLOG_URL?>content/plugins/bdmusic/image/player.png") no-repeat 0 5px;
+	border-bottom:1px solid #CCCCCC
+	}
+#song li a{
+	width:100%;		
+	display: block;
+	overflow:hidden;
+	text-overflow:ellipsis;
+	white-space:nowrap
+}
+.song-author{
+	color:#CCCCCC;
+}
+#songnav li{
+	float:right;
+	background:#2A9DDB;
+	margin:5px;
+}
+#songnav li:hover{
+	background:blue;	
+}
+#songnav li a{
+	display:block;
+	color:white;
+	padding:5px 10px;
+}
+.bdmusic{
+	position: relative;
+}
+
+#query{
+	height:30px;
+	outline:0;
+	padding-left:5px;
+	width:300px
+}
+#so{
+  width: 80px;
+  display: inline-block;
+  background: rebeccapurple;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  background: #2A9DDB;
+  color: white;
+ /* vertical-align: middle; */
+}
+#so:hover{
+	background:blue;
+}
+.insertMain{
+	display:none;
+	width:400px;
+	padding:10px 15px;
+	position:absolute;
+	top:20px;
+	left:-80px;
+	z-index:10;
+	background: #fff;
+	border:1px solid #ccc;
+	border-radius:4px;
+}
+
+.insertMain .a-close{
+	display:block;
+	width:12px;
+	height:12px;
+	font-size:12px;
+	line-height:12px;
+	text-align:center;
+	position:absolute;
+	top:5px;
+	right:5px;
+}
+

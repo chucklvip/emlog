@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>http://blog.chuck.com/</loc>
+<lastmod>2017-02-10T07:09:59+00:00</lastmod>
+<changefreq>always</changefreq>
+<priority>1.0</priority>
+</url>
+<url>
+<loc>http://blog.chuck.com/post-1.html</loc>
+<lastmod>2017-02-10T05:40:57+00:00</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.8</priority>
+</url>
+<url>
+<loc>http://blog.chuck.com/t/</loc>
+<lastmod>1970-01-01T00:00:00+00:00</lastmod>
+<changefreq>daily</changefreq>
+<priority>0.8</priority>
+</url>
+<url>
+<loc>http://blog.chuck.com/record/201702</loc>
+<lastmod>2017-02-28T16:00:00+00:00</lastmod>
+<changefreq>monthly</changefreq>
+<priority>0.8</priority>
+</url>
+</urlset>

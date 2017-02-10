@@ -38,7 +38,7 @@ function widget_calendar($title){ ?>
 function widget_tag($title){
 	global $CACHE;
 	$tag_cache = $CACHE->readCache('tags');?>
-	<li>
+	<li class="module">
 	<h3><span><?php echo $title; ?></span></h3>
 	<ul id="blogtags">
 	<?php foreach($tag_cache as $value): ?>
@@ -62,20 +62,21 @@ function widget_sort($title){
 	?>
 	<li>
 	<a href="<?php echo Url::sort($value['sid']); ?>"><?php echo $value['sortname']; ?>(<?php echo $value['lognum'] ?>)</a>
+	<a href="<?php echo BLOG_URL; ?>rss.php?sort=<?php echo $value['sid']; ?>"><img src="<?php echo TEMPLATE_URL; ?>images/rss.png" alt="订阅该分类"/></a>
 	<?php if (!empty($value['children'])): ?>
-		<ul>
+		<ol>
 		<?php
 		$children = $value['children'];
 		foreach ($children as $key):
 			$value = $sort_cache[$key];
 		?>
 		<li>
-			<a href="<?php echo Url::sort($value['sid']); ?>"><?php echo $value['sortname']; ?>(<?php echo $value['lognum'] ?>)</a>
+		  <a href="<?php echo Url::sort($value['sid']); ?>"><?php echo $value['sortname']; ?>(<?php echo $value['lognum'] ?>)</a>
+		  <a href="<?php echo BLOG_URL; ?>rss.php?sort=<?php echo $value['sid']; ?>"><img src="<?php echo TEMPLATE_URL; ?>images/rss.png" alt="订阅该分类"/></a>
 		</li>
 		<?php endforeach; ?>
-		</ul>
+		</ol>
 	<?php endif; ?>
-	</li>
 	<?php endforeach; ?>
 	</ul>
 	</li>
@@ -111,10 +112,33 @@ function widget_newcomm($title){
 	<ul id="newcomment">
 	<?php
 	foreach($com_cache as $value):
+	$articleUrl = Url::log($value['gid']);
 	$url = Url::comment($value['gid'], $value['page'], $value['cid']);
+	//根据id获取文章标题
+	$db = MySql::getInstance();
+    $sql = "SELECT title FROM ".DB_PREFIX."blog WHERE gid=".$value['gid'];
+	$ret = $db->query($sql);
+    $row = $db->fetch_array($ret);
+    $articleTitle = $row['title'];
+	//根据评论id获取主页地址
+	$db = MySql::getInstance();
+    $sql = "SELECT url FROM ".DB_PREFIX."comment WHERE cid=".$value['cid'];
+	$ret = $db->query($sql);
+    $row = $db->fetch_array($ret);
+    $webUrl = str_replace("/", "", str_replace("http://", "", $row['url']));
 	?>
-	<li id="comment"><?php echo $value['name']; ?>
-	<br /><a href="<?php echo $url; ?>"><?php echo $value['content']; ?></a></li>
+	<li id="comment">
+		<h4><a href="<?php echo $articleUrl; ?>">原文：<?php echo $articleTitle; ?></a></h4>
+		<div class="comPic"><img src="<?php echo getGravatar($value['mail'], 50); ?>" /></div>
+		<div class="comInfo">
+			<h5><?php echo $value['name']; ?></h5>
+			<p><?php echo gmdate('Y-n-j G:i', $value['date']); ?><br /><?php echo $webUrl; ?></p>
+		</div>
+		<div class="comContent">
+			<i></i>
+			<a href="<?php echo $url; ?>"><?php echo $value['content']; ?></a>
+		</div>
+	</li>
 	<?php endforeach; ?>
 	</ul>
 	</li>
@@ -165,18 +189,6 @@ function widget_random_log($title){
 	</li>
 <?php }?>
 <?php
-//widget：搜索
-function widget_search($title){ ?>
-	<li>
-	<h3><span><?php echo $title; ?></span></h3>
-	<ul id="logsearch">
-	<form name="keyform" method="get" action="<?php echo BLOG_URL; ?>index.php">
-	<input name="keyword" class="search" type="text" />
-	</form>
-	</ul>
-	</li>
-<?php } ?>
-<?php
 //widget：归档
 function widget_archive($title){
 	global $CACHE; 
@@ -206,7 +218,6 @@ function widget_custom_text($title, $content){ ?>
 function widget_link($title){
 	global $CACHE; 
 	$link_cache = $CACHE->readCache('link');
-    //if (!blog_tool_ishome()) return;#只在首页显示友链去掉双斜杠注释即可
 	?>
 	<li>
 	<h3><span><?php echo $title; ?></span></h3>
@@ -216,69 +227,47 @@ function widget_link($title){
 	<?php endforeach; ?>
 	</ul>
 	</li>
-<?php }?> 
+<?php }?>
 <?php
 //blog：导航
 function blog_navi(){
-	global $CACHE; 
+	global $CACHE;
 	$navi_cache = $CACHE->readCache('navi');
 	?>
-	<ul class="bar">
+	<ul class="clearfix" id="menu">
 	<?php
 	foreach($navi_cache as $value):
-
-        if ($value['pid'] != 0) {
-            continue;
-        }
-
-		if($value['url'] == ROLE_ADMIN && (ROLE == ROLE_ADMIN || ROLE == ROLE_WRITER)):
-			?>
-			<li class="item common"><a href="<?php echo BLOG_URL; ?>admin/">管理站点</a></li>
-			<li class="item common"><a href="<?php echo BLOG_URL; ?>admin/?action=logout">退出</a></li>
-			<?php 
+		if($value['url'] == 'admin'):
 			continue;
 		endif;
 		$newtab = $value['newtab'] == 'y' ? 'target="_blank"' : '';
         $value['url'] = $value['isdefault'] == 'y' ? BLOG_URL . $value['url'] : trim($value['url'], '/');
-        $current_tab = BLOG_URL . trim(Dispatcher::setPath(), '/') == $value['url'] ? 'current' : 'common';
+		$current_tab = BLOG_URL . trim(Dispatcher::setPath(), '/') == $value['url'] ? 'current' : 'common';
 		?>
-		<li class="item <?php echo $current_tab;?>">
-			<a href="<?php echo $value['url']; ?>" <?php echo $newtab;?>><?php echo $value['naviname']; ?></a>
-			<?php if (!empty($value['children'])) :?>
-            <ul class="sub-nav">
+		<li class="<?php echo $current_tab;?>">
+                <a href="<?php echo $value['url']; ?>" <?php echo $newtab;?>><?php echo $value['naviname']; ?></a>
+                <?php if (!empty($value['children'])) :?>
+                <ul>
                 <?php foreach ($value['children'] as $row){
                         echo '<li><a href="'.Url::sort($row['sid']).'">'.$row['sortname'].'</a></li>';
                 }?>
-			</ul>
-            <?php endif;?>
-
-            <?php if (!empty($value['childnavi'])) :?>
-            <ul class="sub-nav">
-                <?php foreach ($value['childnavi'] as $row){
-                        $newtab = $row['newtab'] == 'y' ? 'target="_blank"' : '';
-                        echo '<li><a href="' . $row['url'] . "\" $newtab >" . $row['naviname'].'</a></li>';
-                }?>
-			</ul>
-            <?php endif;?>
-
-		</li>
+		</ul>
+                <?php endif;?>
+                </li>
 	<?php endforeach; ?>
 	</ul>
 <?php }?>
 <?php
 //blog：置顶
-function topflg($top, $sortop='n', $sortid=null){
-    if(blog_tool_ishome()) {
-       echo $top == 'y' ? "<img src=\"".TEMPLATE_URL."/images/top.png\" title=\"首页置顶文章\" /> " : '';
-    } elseif($sortid){
-       echo $sortop == 'y' ? "<img src=\"".TEMPLATE_URL."/images/sortop.png\" title=\"分类置顶文章\" /> " : '';
-    }
+function topflg($istop){
+	$topflg = $istop == 'y' ? "<img src=\"".TEMPLATE_URL."/images/import.gif\" title=\"置顶文章\" /> " : '';
+	echo $topflg;
 }
 ?>
 <?php
 //blog：编辑
 function editflg($logid,$author){
-	$editflg = ROLE == ROLE_ADMIN || $author == UID ? '<a href="'.BLOG_URL.'admin/write_log.php?action=edit&gid='.$logid.'" target="_blank">编辑</a>' : '';
+	$editflg = ROLE == 'admin' || $author == UID ? '<a href="'.BLOG_URL.'admin/write_log.php?action=edit&gid='.$logid.'" target="_blank">编辑</a>' : '';
 	echo $editflg;
 }
 ?>
@@ -287,9 +276,8 @@ function editflg($logid,$author){
 function blog_sort($blogid){
 	global $CACHE; 
 	$log_cache_sort = $CACHE->readCache('logsort');
-	?>
-	<?php if(!empty($log_cache_sort[$blogid])): ?>
-    <a href="<?php echo Url::sort($log_cache_sort[$blogid]['id']); ?>"><?php echo $log_cache_sort[$blogid]['name']; ?></a>
+	if(!empty($log_cache_sort[$blogid])): ?>
+分类：<a href="<?php echo Url::sort($log_cache_sort[$blogid]['id']); ?>"><?php echo $log_cache_sort[$blogid]['name']; ?></a>
 	<?php endif;?>
 <?php }?>
 <?php
@@ -316,21 +304,36 @@ function blog_author($uid){
 	$des = $user_cache[$uid]['des'];
 	$title = !empty($mail) || !empty($des) ? "title=\"$des $mail\"" : '';
 	echo '<a href="'.Url::author($uid)."\" $title>$author</a>";
-}
-?>
+}?>
 <?php
 //blog：相邻文章
 function neighbor_log($neighborLog){
 	extract($neighborLog);?>
 	<?php if($prevLog):?>
-	&laquo; <a href="<?php echo Url::log($prevLog['gid']) ?>"><?php echo $prevLog['title'];?></a>
+	上一篇：<a href="<?php echo Url::log($prevLog['gid']) ?>"><?php echo $prevLog['title'];?></a>
 	<?php endif;?>
 	<?php if($nextLog && $prevLog):?>
-		|
+		<br />
 	<?php endif;?>
 	<?php if($nextLog):?>
-		 <a href="<?php echo Url::log($nextLog['gid']) ?>"><?php echo $nextLog['title'];?></a>&raquo;
+		 下一篇：<a href="<?php echo Url::log($nextLog['gid']) ?>"><?php echo $nextLog['title'];?></a>
 	<?php endif;?>
+<?php }?>
+<?php
+//blog：引用通告
+function blog_trackback($tb, $tb_url, $allow_tb){
+    if($allow_tb == 'y' && Option::get('istrackback') == 'y'):?>
+	<div id="trackback_address">
+	<p>引用地址: <input type="text" style="width:350px" class="input" value="<?php echo $tb_url; ?>">
+	<a name="tb"></a></p>
+	</div>
+	<?php endif; ?>
+	<?php foreach($tb as $key=>$value):?>
+		<ul id="trackback">
+		<li><a href="<?php echo $value['url'];?>" target="_blank"><?php echo $value['title'];?></a></li>
+		<li>BLOG: <?php echo $value['blog_name'];?></li><li><?php echo $value['date'];?></li>
+		</ul>
+	<?php endforeach; ?>
 <?php }?>
 <?php
 //blog：评论列表
@@ -343,7 +346,7 @@ function blog_comments($comments){
 	<?php
 	$isGravatar = Option::get('isgravatar');
 	foreach($commentStacks as $cid):
-    $comment = $comments[$cid];
+        $comment = $comments[$cid];
 	$comment['poster'] = $comment['url'] ? '<a href="'.$comment['url'].'" target="_blank">'.$comment['poster'].'</a>' : $comment['poster'];
 	?>
 	<div class="comment" id="comment-<?php echo $comment['cid']; ?>">
@@ -391,7 +394,7 @@ function blog_comments_post($logid,$ckname,$ckmail,$ckurl,$verifyCode,$allow_rem
 		<p class="comment-header"><b>发表评论：</b><a name="respond"></a></p>
 		<form method="post" name="commentform" action="<?php echo BLOG_URL; ?>index.php?action=addcom" id="commentform">
 			<input type="hidden" name="gid" value="<?php echo $logid; ?>" />
-			<?php if(ROLE == ROLE_VISITOR): ?>
+			<?php if(ROLE == 'visitor'): ?>
 			<p>
 				<input type="text" name="comname" maxlength="49" value="<?php echo $ckname; ?>" size="22" tabindex="1">
 				<label for="author"><small>昵称</small></label>
@@ -405,10 +408,7 @@ function blog_comments_post($logid,$ckname,$ckmail,$ckurl,$verifyCode,$allow_rem
 				<label for="url"><small>个人主页 (选填)</small></label>
 			</p>
 			<?php endif; ?>
-			<p><textarea name="comment" id="comment" rows="10" tabindex="4"></textarea><div style="position: relative;"><label style="background:rgba(0,0,0,0);border:none;" for="Mrxn"><input style="width:15px;" type="checkbox" value=-11 id="mrxn" name="Mrxn" required="required" autocomplete="on" required title="发表评论确认框：请勾选我再发表评论！"><font color="red">请勾选我再发表评论！</font></label><?php $num1 = rand(10,99); $num2 = rand(10,99); ?>
-					<font color="red"><?php echo $num1?> + <?php echo $num2?> </font>= <input style="background:rgba(0,0,0,0);border:none;" type="text" class="text" tabindex="1" style="width:25px; text-align:center;" value="" id="math" name="math" placeholder="?">
-					<input type="hidden" value="<?php echo $num1; ?>" class="text" name="num1" />
-					<input type="hidden" value="<?php echo $num2; ?>" class="text" name="num2" /></div></p>
+			<p><textarea name="comment" id="comment" rows="10" tabindex="4"></textarea></p>
 			<p><?php echo $verifyCode; ?> <input type="submit" id="comment_submit" value="发表评论" tabindex="6" /></p>
 			<input type="hidden" name="pid" id="comment-pid" value="0" size="22" tabindex="1"/>
 		</form>
@@ -416,6 +416,108 @@ function blog_comments_post($logid,$ckname,$ckmail,$ckurl,$verifyCode,$allow_rem
 	</div>
 	<?php endif; ?>
 <?php }?>
+<?php
+//blog：图片幻灯
+function blog_image_slide($count){
+    ?>
+    <div class="box_skitter box_skitter_normal">
+    <ul>
+    <?php
+    $db = MySql::getInstance();
+    $sql = "SELECT a.filepath,b.title,b.gid  FROM ".DB_PREFIX."attachment as a, ".DB_PREFIX."blog as b where a.blogid=b.gid and a.thumfor=0 ORDER BY a.addtime DESC limit $count";
+	$ret = $db->query($sql);
+        echo $sql;
+    $items = array();
+	while ($row = $db->fetch_array($ret)) {
+		$row['filepath'] = $atturl = BLOG_URL.substr($row['filepath'], 3);
+		$row['title'] = htmlspecialchars($row['title']);
+		$row['logurl'] = Url::log(intval($row['gid']));
+		$items[] = $row;
+	}
+	foreach($items as $val):
+	?>
+        <li>
+	<a href="<?php echo $val['logurl'];?>" target="_blank">
+        <img  width="340" height="300" src="<?php echo $val['filepath'];?>" alt="<?php echo $row['title'];?>" />
+        </a>
+	<div class="label_text"><p><?php echo $val['title'];?></p></div>
+	</li>
+	<?php endforeach; ?>
+	</ul>
+    </div>
+<?php }?>
+<?php
+//blog：日志封面
+function blog_cover($blogid, &$cover_img){
+    $db = MySql::getInstance();
+    $sql = "SELECT b.filepath,a.title,a.gid  FROM ".DB_PREFIX."blog as a, ".DB_PREFIX."attachment as b where  a.gid=$blogid and b.blogid=a.gid ORDER BY b.addtime DESC, thumfor DESC ";
+	$ret = $db->query($sql);
+    $row = $db->fetch_array($ret);
+    if (!empty($row)):
+        $row['filepath'] = $row['filepath'] ? BLOG_URL.substr($row['filepath'], 3) : TEMPLATE_URL . 'image/logo.png';
+        $row['title'] = htmlspecialchars($row['title']);
+        $row['logurl'] = Url::log(intval($row['gid']));
+        $cover_img = $row['filepath'];
+?>
+     <a href="<?php echo $row['logurl'];?>" target="_blank"><img  width="110" height="148" src="<?php echo $row['filepath'];?>" alt="<?php echo $row['title'];?>" /></a>
+<?php 
+    endif;
+}?>
+<?php
+//blog：N天内热门
+function blog_ndayhot($count, $n){
+    ?>
+    <div class="focus_top">
+    <?php
+    $curdate = time();
+    $db = MySql::getInstance();
+    $sql = "SELECT * FROM " . DB_PREFIX . "blog WHERE type='blog' and hide='n' and date>UNIX_TIMESTAMP()-86400*$n order by views desc limit $count";
+	$ret = $db->query($sql);
+    $items = array();
+    global $CACHE;
+	$user_cache = $CACHE->readCache('user');
+	while ($row = $db->fetch_array($ret)) {
+		$row['title'] = htmlspecialchars($row['title']);
+        $row['excerpt'] = htmlspecialchars(strip_tags($row['excerpt']));
+		$row['logurl'] = Url::log(intval($row['gid']));
+        $row['author'] = '<a href="'.Url::author($row['author']).'">' . $user_cache[$row['author']]['name'].'</a>';
+        $row['date'] = gmdate('Y/n/j G:i', $row['date']);
+		$items[] = $row;
+	}
+	foreach($items as $val):
+	?>
+    <div class="ftcontain">
+        <li>
+            <a href="<?php echo $val['logurl']; ?>" title="<?php echo $val['title']; ?>"><?php echo $val['title']; ?></a>
+        </li>
+    </div>
+	<?php endforeach; ?>
+    </div>
+<?php }?>
+<?php
+//blog：首页底部友情链接
+function footer_link(){
+	global $CACHE; 
+	$link_cache = $CACHE->readCache('link');
+        if (blog_tool_ishome()) :
+	?>
+	<div id="footer_link"><b>友情链接：</b>
+	<?php foreach($link_cache as $value): ?>
+	<a href="<?php echo $value['url']; ?>" title="<?php echo $value['des']; ?>" target="_blank"><?php echo $value['link']; ?></a> 
+	<?php endforeach; ?>
+	</div>
+        <?php endif;?>
+<?php }?>
+<?php
+//blog-tool:格式化内容工具，去除html标签
+function blog_tool_purecontent($content, $strlen = null){
+        $content = strip_tags($content);
+        if ($strlen) {
+            $content = subString($content, 0, $strlen);
+        }
+        return $content;
+}
+?>
 <?php
 //blog-tool:判断是否是首页
 function blog_tool_ishome(){
